@@ -68,3 +68,86 @@ git clone [https://github.com/minghir/qdbf.git](https://github.com/minghir/qdbf.
  ## 📝 License
 This project is licensed under the MIT License - see the LICENSE file for details.
   
+
+
+```bash
+--- QDBF Network Login ---
+
+User: admin
+Password: ***
+IP Server [default 127.0.0.1]:
+[SUCCESS] DBF database opened successfully.
+[SUCCESS] Session started for: 127.0.0.1
+[SUCCESS] --- Shell Interface Started ---
+
+qdbf# /help
+
+Client commands:
+  /help                         Displays this help
+  /connect user:password@ip [port]   Connect to a QDBF server
+  /save csv <path>              Saves the last result as CSV
+  /save dbf <path>              Saves the last result as DBF
+  /load <file> into <table>     Imports a CSV or DBF into the server
+  /clear                        Clears the console
+  /exit, /quit                  Closes the client
+
+Server commands (authentication required):
+  /adduser <name> <password> <role>   Adds a user
+  /dropuser <name>                    Removes a user
+  /list_users                         Lists all users
+  /sessions                           Shows active sessions
+  /shutdown                           Shuts down the server
+
+SQL:
+  SELECT * FROM people;
+  INSERT, UPDATE, DELETE, CREATE TABLE, DROP TABLE and SHOW TABLES
+  SHOW TABLES
+
+
+
+qdbf# show tables;
++--------------------+
+| Tables_in_database |
++--------------------+
+| pers_csv           |
+| pers_dbf           |
+| persoane           |
+| persoane - Copy    |
+| rude               |
+| test               |
+| test2              |
+| test3              |
+| test4              |
+| test_drop          |
+| testdate           |
++--------------------+
+
+[SUCCESS] (0 rows in set, 0.000 sec)
+
+qdbf# select * from persoane;
++----+------------------+--------+----------+-----------+
+| ID | NUME             | VARSTA | DATAN    | ORAS      |
++----+------------------+--------+----------+-----------+
+| 1  | Ion Popescu      | 45     | 19800512 | Bucuresti |
+| 2  | Maria Ionescu    | 30     | 19951001 | Cluj      |
+| 3  | Vasile Georgescu | 52     | 19730322 | Iasi      |
+| 4  | Elena Stan       | 28     | 19970715 | Constanta |
+| 6  | Andra Dumitru    | 44     | 19891109 | Brasov    |
+| 5  | Apostol Catalin  | 23     | 19771203 | Bucuresti |
++----+------------------+--------+----------+-----------+
+
+[SUCCESS] (6 rows in set, 0.000 sec)
+
+qdbf# SELECT * FROM persoane WHERE varsta > (SELECT AVG(varsta) FROM persoane);
++----+------------------+--------+----------+-----------+
+| ID | NUME             | VARSTA | DATAN    | ORAS      |
++----+------------------+--------+----------+-----------+
+| 1  | Ion Popescu      | 45     | 19800512 | Bucuresti |
+| 3  | Vasile Georgescu | 52     | 19730322 | Iasi      |
+| 6  | Andra Dumitru    | 44     | 19891109 | Brasov    |
++----+------------------+--------+----------+-----------+
+
+[SUCCESS] (3 rows in set, 0.002 sec)
+
+qdbf#
+```
