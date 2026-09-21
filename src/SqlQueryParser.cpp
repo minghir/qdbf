@@ -600,35 +600,39 @@ bool SqlQueryParser::parseFrom(std::wstring section) {
     std::wstring trimmedSection = wstr_trim(section);
     if (trimmedSection.empty()) return true;
 
-    // ⭐ SCUTUL SUPREM ⭐
-    // Resetăm forțat starea pentru a preveni bug-ul de re-parsare (Dublu JOIN fantomă)
     query.fromTable = QueryTable();
     query.joins.clear();
 
-    // --- 1. CAZ SPECIAL: Subquery direct în clauză (Derived Table) ---
-    if (trimmedSection.front() == L'(') {
-        size_t lastParen = trimmedSection.find_last_of(L')');
-        if (lastParen == std::wstring::npos) {
-            return setError(L"Unclosed parenthesis for the FROM subquery.", trimmedSection);
-        }
+    // 1. Găsim unde începe primul JOIN (dacă există)
+    size_t firstJoinPos = findFirstJoinKeyword(trimmedSection);
+
+    std::wstring mainTablesPart;
+    std::wstring joinsPart;
+
+    if (firstJoinPos != std::wstring::npos) {
+        mainTablesPart = wstr_trim(trimmedSection.substr(0, firstJoinPos));
+        joinsPart = wstr_trim(trimmedSection.substr(firstJoinPos));
+    }
+    else {
+        mainTablesPart = trimmedSection;
+    }
+
+    // --- 2. PROCESĂM TABELUL PRINCIPAL / SUBQUERY-UL ---
+    if (mainTablesPart.front() == L'(') {
+        size_t lastParen = mainTablesPart.find_last_of(L')');
+        if (lastParen == std::wstring::npos) return setError(L"Unclosed parenthesis in the subquery.", mainTablesPart);
 
         QueryTable qt;
         qt.isSubquery = true;
-        std::wstring subQueryStr = wstr_trim(trimmedSection.substr(1, lastParen - 1));
+        std::wstring subQueryStr = wstr_trim(mainTablesPart.substr(1, lastParen - 1));
         qt.name = L"derived_table";
 
-        // Parsăm recursiv subquery-ul
         qt.subSelect = std::make_shared<Query>();
         SqlQueryParser subParser(subQueryStr, *qt.subSelect);
-        if (!subParser.parseSelect()) {
-            return setError(L"Error in the FROM subquery: " + subParser.getLastError().message, subQueryStr);
-        }
+        if (!subParser.parseSelect()) return setError(L"Subquery error: " + subParser.getLastError().message);
 
-        // Extragem alias-ul obligatoriu (ex: AS prs)
-        std::wstring remaining = wstr_trim(trimmedSection.substr(lastParen + 1));
-        if (remaining.empty()) {
-            return setError(L"FROM subqueries must have an alias (e.g. FROM (...) AS t).", trimmedSection);
-        }
+        std::wstring remaining = wstr_trim(mainTablesPart.substr(lastParen + 1));
+        if (remaining.empty()) return setError(L"Missing alias for subquery.", mainTablesPart);
 
         if (to_upper(remaining).substr(0, 3) == L"AS ") {
             qt.alias = stripQuotes(wstr_trim(remaining.substr(3)));
@@ -636,48 +640,50 @@ bool SqlQueryParser::parseFrom(std::wstring section) {
         else {
             qt.alias = stripQuotes(remaining);
         }
-
         query.fromTable = qt;
-        return true;
+    }
+    else {
+        // Tabele clasice (cu sau fără virgulă)
+        std::vector<std::wstring> tableTokens = wexplodeSQL(mainTablesPart, L',');
+        for (auto& token : tableTokens) {
+            std::wstring cleanToken = wstr_trim(token);
+            if (cleanToken.empty()) continue;
+
+            QueryTable qt;
+            if (!parseSingleTableSource(cleanToken, qt)) return setError(L"Invalid source in the FROM clause.", cleanToken);
+
+            if (query.fromTable.name.empty() && !query.fromTable.isSubquery) {
+                query.fromTable = qt;
+            }
+            else {
+                JoinClause jc;
+                jc.type = JoinType::INNER;
+                jc.table = qt;
+                query.joins.push_back(jc);
+            }
+        }
     }
 
-    // --- 2. CAZUL CLASIC: Tabele normale (cu sau fără virgule) ---
-    std::vector<std::wstring> tableTokens = wexplodeSQL(trimmedSection, L',');
-
-    for (auto& token : tableTokens) {
-        std::wstring cleanToken = wstr_trim(token);
-        if (cleanToken.empty()) continue;
-
-        QueryTable qt;
-        if (!parseSingleTableSource(cleanToken, qt)) {
-            return setError(L"Invalid FROM source.", cleanToken);
-        }
-
-        // Deoarece am golit manual fromTable mai sus, primul token va intra mereu aici:
-        if (query.fromTable.name.empty() && !query.fromTable.isSubquery) {
-            query.fromTable = qt;
-        }
-        else {
-            // Doar dacă au existat virgule (ex: FROM tab1, tab2) va ajunge aici
-            JoinClause jc;
-            jc.type = JoinType::INNER;
-            jc.table = qt;
-            query.joins.push_back(jc);
+    // --- 3. PROCESĂM JOIN-URILE EXPLICITE ---
+    if (!joinsPart.empty()) {
+        if (!parseJoinsRecursive(joinsPart)) {
+            return false;
         }
     }
 
     return true;
 }
 
-size_t SqlQueryParser::findFirstJoinKeyword(const std::wstring& upperStr) {
-    // Ordinea contează: pune formele lungi primele pentru a nu găsi "JOIN" în interiorul "LEFT JOIN"
+size_t SqlQueryParser::findFirstJoinKeyword(const std::wstring& str) {
+    // Ordinea contează: formele lungi primele
     std::vector<std::wstring> keywords = {
         L" INNER JOIN", L" LEFT JOIN", L" RIGHT JOIN", L" FULL JOIN", L" JOIN"
     };
 
     size_t minPos = std::wstring::npos;
     for (const auto& kw : keywords) {
-        size_t pos = upperStr.find(kw);
+        // IMPORTANT: Căutăm doar în afara parantezelor!
+        size_t pos = findOutsideParens(str, kw);
         if (pos != std::wstring::npos && (minPos == std::wstring::npos || pos < minPos)) {
             minPos = pos;
         }

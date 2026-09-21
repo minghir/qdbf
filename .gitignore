@@ -20,7 +20,10 @@ build/
 Debug/
 Release/
 x64/
-
+client/X64/
+client/x64/
+client/Release/
+client/Debug/
 # Editor and OS files
 .vscode/
 *~
