@@ -48,9 +48,10 @@ A C++17 (or newer) compatible compiler (MSVC, GCC, Clang).
 Add any specific libraries you used here (if any, like WinSock for networking).
 
 # Build Instructions
-Clone the repository:
+* Clone the repository:
 ```bash
-git clone [https://github.com/yourusername/qdbf.git](https://github.com/yourusername/qdbf.git)
+git clone [https://github.com/minghir/qdbf.git](https://github.com/minghir/qdbf.git)
 ```
-
+* Open the project in your IDE (e.g., Visual Studio) or build using your Make/CMake setup.
+* Build the Server and Client executables.
 
