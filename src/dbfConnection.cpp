@@ -10,6 +10,28 @@
 #include <filesystem>
 #include <cwctype>
 
+namespace {
+std::filesystem::path resolveCaseInsensitivePath(const std::filesystem::path& requested) {
+    if (std::filesystem::exists(requested)) return requested;
+
+    const auto parent = requested.parent_path();
+    if (!std::filesystem::is_directory(parent)) return requested;
+
+    std::wstring wanted = requested.filename().wstring();
+    std::transform(wanted.begin(), wanted.end(), wanted.begin(),
+        [](wchar_t character) { return std::towlower(character); });
+
+    for (const auto& entry : std::filesystem::directory_iterator(parent)) {
+        std::wstring candidate = entry.path().filename().wstring();
+        std::transform(candidate.begin(), candidate.end(), candidate.begin(),
+            [](wchar_t character) { return std::towlower(character); });
+        if (candidate == wanted) return entry.path();
+    }
+
+    return requested;
+}
+}
+
 dbfConnection::dbfConnection(const std::string& type, const std::wstring& dsn)
     : m_filePath(dsn) // dsn-ul este calea către fișier în cazul tău
 {
@@ -593,7 +615,7 @@ std::string dbfConnection::formatFieldForDbf(const std::wstring& val, int width,
 
 bool dbfConnection::appendRecords(const std::wstring& tableName, const vConTable& dataToInsert) {
     std::wstring fileName = ensureExtension(tableName, L".dbf");
-    std::wstring fullPath = m_filePath + (m_filePath.back() == L'\\' ? L"" : L"\\") + fileName;
+    std::wstring fullPath = resolveCaseInsensitivePath(std::filesystem::path(m_filePath) / fileName).wstring();
 
     // 1. Backup cu noul sistem (Timestamp: YYYYMMDD_HHMMSS)
     createBackup(fullPath);
@@ -678,7 +700,7 @@ bool dbfConnection::deleteRecords(const std::wstring& tableName, const std::vect
     if (indices.empty()) return true;
 
     std::wstring fileName = ensureExtension(tableName, L".dbf");
-    std::wstring fullPath = m_filePath + (m_filePath.back() == L'\\' ? L"" : L"\\") + fileName;
+    std::wstring fullPath = (std::filesystem::path(m_filePath) / fileName).wstring();
 
     // 1. Backup cu timestamp (folosim funcția creată anterior)
     createBackup(fullPath);
@@ -739,7 +761,7 @@ bool dbfConnection::updateRecords(const std::wstring& tableName, const std::map<
     if (updates.empty()) return true;
 
     std::wstring fileName = ensureExtension(tableName, L".dbf");
-    std::wstring fullPath = m_filePath + (m_filePath.back() == L'\\' ? L"" : L"\\") + fileName;
+    std::wstring fullPath = (std::filesystem::path(m_filePath) / fileName).wstring();
 
     // 1. Creăm backup-ul cu timestamp înainte de orice modificare
     createBackup(fullPath);
@@ -831,7 +853,7 @@ vConTable dbfConnection::loadTable(const QueryTable& tableInfo) {
 
     // 1. Pregătim numele și calea
     std::wstring fileName = ensureExtension(tableInfo.name, L".dbf");
-    std::wstring fullPath = m_filePath + (m_filePath.back() == L'\\' ? L"" : L"\\") + fileName;
+    std::wstring fullPath = resolveCaseInsensitivePath(std::filesystem::path(m_filePath) / fileName).wstring();
 
     std::ifstream file(fullPath, std::ios::binary);
     if (!file.is_open()) {
@@ -909,7 +931,7 @@ vConTable dbfConnection::loadTable(const QueryTable& tableInfo) {
 
     // 1. Pregătim numele și calea
     std::wstring fileName = ensureExtension(tableInfo.name, L".dbf");
-    std::wstring fullPath = m_filePath + (m_filePath.back() == L'\\' ? L"" : L"\\") + fileName;
+    std::wstring fullPath = resolveCaseInsensitivePath(std::filesystem::path(m_filePath) / fileName).wstring();
 
     std::ifstream file{ std::filesystem::path(fullPath), std::ios::binary };
     //std::fstream file(std::filesystem::path(fullPath), std::ios::binary );
@@ -1028,7 +1050,7 @@ bool dbfConnection::packTable(const std::wstring& tableName) {
     if (tableName.empty()) return false;
 
     std::wstring fileName = ensureExtension(tableName, L".dbf");
-    std::wstring fullPath = m_filePath + (m_filePath.back() == L'\\' ? L"" : L"\\") + fileName;
+    std::wstring fullPath = (std::filesystem::path(m_filePath) / fileName).wstring();
 
     // 1. Backup
     createBackup(fullPath);
@@ -1082,7 +1104,7 @@ bool dbfConnection::createTable(const std::wstring& query) {
         std::wstring tableName = wstr_trim(query.substr(nameStart, startParen - nameStart));
 
         std::wstring fileName = ensureExtension(tableName, L".dbf");
-        std::wstring fullPath = m_filePath + (m_filePath.back() == L'\\' ? L"" : L"\\") + fileName;
+        std::wstring fullPath = (std::filesystem::path(m_filePath) / fileName).wstring();
 
         if (std::filesystem::exists(fullPath)) {
             LOG_ERROR(L"CREATE TABLE: Tabelul '" + tableName + L"' exista deja!");
@@ -1212,7 +1234,7 @@ bool dbfConnection::dropTable(const std::wstring& query) {
         }
 
         std::wstring fileName = ensureExtension(tableName, L".dbf");
-        std::wstring fullPath = m_filePath + (m_filePath.back() == L'\\' ? L"" : L"\\") + fileName;
+        std::wstring fullPath = (std::filesystem::path(m_filePath) / fileName).wstring();
 
         // Verificăm dacă fișierul există înainte de a încerca să-l ștergem
         if (!std::filesystem::exists(fullPath)) {
@@ -1226,7 +1248,7 @@ bool dbfConnection::dropTable(const std::wstring& query) {
 
             // OPȚIONAL: Ștergem și fișierul de index (.cdx / .idx) dacă există
             std::wstring indexFile = ensureExtension(tableName, L".cdx");
-            std::wstring indexPath = m_filePath + (m_filePath.back() == L'\\' ? L"" : L"\\") + indexFile;
+            std::wstring indexPath = (std::filesystem::path(m_filePath) / indexFile).wstring();
             if (std::filesystem::exists(indexPath)) {
                 std::filesystem::remove(indexPath);
                 //LOG_INFO(L"Indexul asociat a fost de asemenea șters.");
@@ -1454,7 +1476,7 @@ bool dbfConnection::alterDropColumn(const std::wstring& tableName, const std::ws
         // 5. Resalvăm fișierul
         // saveFile va recalcula headerLength și recordLength pe baza noilor vectori
         std::wstring fileName = ensureExtension(tableName, L".dbf");
-        std::wstring fullPath = m_filePath + (m_filePath.back() == L'\\' ? L"" : L"\\") + fileName;
+        std::wstring fullPath = (std::filesystem::path(m_filePath) / fileName).wstring();
 
         // Opțional: Backup la fișierul vechi înainte de overwrite
         // std::filesystem::copy_file(fullPath, fullPath + L".bak", std::filesystem::copy_options::overwrite_existing);
@@ -1534,7 +1556,7 @@ bool dbfConnection::alterAddColumn(const std::wstring & tableName, const std::ws
 
         // 6. Salvăm tabelul
         std::wstring fileName = ensureExtension(tableName, L".dbf");
-        std::wstring fullPath = m_filePath + (m_filePath.back() == L'\\' ? L"" : L"\\") + fileName;
+        std::wstring fullPath = (std::filesystem::path(m_filePath) / fileName).wstring();
 
         bool ok = saveFile(fullPath, table);
         if (ok) LOG_SUCCESS(L"Coloana '" + colName + L"' a fost adaugata cu succes.");
@@ -1611,7 +1633,7 @@ bool dbfConnection::alterModifyColumn(const std::wstring& tableName, const std::
         }
 
         std::wstring fileName = ensureExtension(tableName, L".dbf");
-        std::wstring fullPath = m_filePath + (m_filePath.back() == L'\\' ? L"" : L"\\") + fileName;
+        std::wstring fullPath = (std::filesystem::path(m_filePath) / fileName).wstring();
 
         bool ok = saveFile(fullPath, table);
         if (ok) LOG_SUCCESS(L"Coloana '" + targetCol + L"' a fost modificata.");
@@ -1635,7 +1657,7 @@ std::vector<vExternalColumnInfo> dbfConnection::getTableSchema(const std::wstrin
     }
 
     // m_dirPath este directorul setat în constructor
-    std::wstring fullPath = m_dirPath + (m_dirPath.back() == L'\\' ? L"" : L"\\") + fileName;
+    std::wstring fullPath = (std::filesystem::path(m_dirPath) / fileName).wstring();
 
     // 2. Deschidem fișierul binar
     //std::ifstream file(fullPath, std::ios::binary);

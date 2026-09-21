@@ -8,10 +8,7 @@
 #include <fstream>
 #include <iostream>
 
-#define WIN32_LEAN_AND_MEAN
-#include <windows.h>
-#include <winsock2.h>
-#include <ws2tcpip.h>
+#include "platform.hpp"
 
 
 #include "fileUtils.hpp"
@@ -326,10 +323,20 @@
     }
 
     bool wrenameFile(const std::wstring& oldName, const std::wstring& newName) {
+#ifdef _WIN32
         if (_wrename(oldName.c_str(), newName.c_str()) != 0) {
             std::wcerr << L"Eroare la redenumirea fișierului: " << oldName << L" → " << newName << std::endl;
             return false;
         }
+#else
+        try {
+            fs::rename(fs::path(oldName), fs::path(newName));
+        }
+        catch (const fs::filesystem_error&) {
+            std::wcerr << L"Eroare la redenumirea fișierului: " << oldName << L" → " << newName << std::endl;
+            return false;
+        }
+#endif
         return true;
     }
 
@@ -366,15 +373,20 @@
     }
 
     std::wstring getTempPath() {
+#ifdef _WIN32
         std::vector<wchar_t> tempPath(MAX_PATH);
         DWORD length = GetTempPathW(MAX_PATH, tempPath.data());
         if (length > 0 && length < MAX_PATH) {
             return std::wstring(tempPath.data(), length);
         }
         return L""; // Returnează un șir gol în caz de eroare
+    #else
+        return fs::temp_directory_path().wstring();
+    #endif
     }
 
     std::wstring getUniqueTempFilePath(const std::wstring& tempDir, const std::wstring& prefix) {
+#ifdef _WIN32
         std::vector<wchar_t> tempFilePath(MAX_PATH);
         UINT result = GetTempFileNameW(
             tempDir.c_str(), // Directorul temporar
@@ -387,6 +399,10 @@
             return std::wstring(tempFilePath.data());
         }
         return L""; // Returnează un șir gol în caz de eroare
+    #else
+        const auto path = fs::temp_directory_path() / (prefix + L"-qdbf-temp");
+        return path.wstring();
+    #endif
     }
 
 
@@ -405,7 +421,7 @@
 
 std::wstring citeste_fisier_utf8(const std::wstring& filePath) {
     // Deschidem fișierul în mod binar pentru a nu altera caracterele speciale
-    std::ifstream file(filePath, std::ios::in | std::ios::binary);
+    std::ifstream file(fs::path(filePath), std::ios::in | std::ios::binary);
     if (!file.is_open()) {
         return L"";
     }

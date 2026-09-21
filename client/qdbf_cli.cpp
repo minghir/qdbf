@@ -18,10 +18,15 @@
 #include <chrono>
 #include <iomanip>
 
-
-#include <conio.h> // Pentru _getch()
+#ifdef _WIN32
+#include <conio.h>
+#else
+#include <termios.h>
+#include <unistd.h>
+#endif
 
 std::wstring getPasswordMasked() {
+#ifdef _WIN32
     std::wstring pass;
     wchar_t ch;
     while ((ch = _getwch()) != L'\r') { // Până la Enter
@@ -38,6 +43,19 @@ std::wstring getPasswordMasked() {
     }
     std::wcout << L"\n";
     return pass;
+#else
+    termios original{};
+    tcgetattr(STDIN_FILENO, &original);
+    termios hidden = original;
+    hidden.c_lflag &= ~ECHO;
+    tcsetattr(STDIN_FILENO, TCSANOW, &hidden);
+
+    std::wstring pass;
+    std::getline(std::wcin, pass);
+    tcsetattr(STDIN_FILENO, TCSANOW, &original);
+    std::wcout << L"\n";
+    return pass;
+#endif
 }
 
 class QdbfClient : public vSqlShellEngine {

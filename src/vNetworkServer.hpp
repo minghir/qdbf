@@ -2,9 +2,7 @@
 #ifndef VNETWORKSERVER_HPP
 #define VNETWORKSERVER_HPP
 
-#include <winsock2.h>
-#include <ws2tcpip.h>
-#include <windows.h>
+#include "platform.hpp"
 #include <thread>
 #include <vector>
 #include <mutex>
@@ -187,7 +185,7 @@ private:
     void handleClient(SOCKET clientSocket, dbfConnection& engine) {
         // 1. Obținere IP Client (Varianta Modernă)
         sockaddr_in addr;
-        int addrLen = sizeof(addr);
+        socklen_t addrLen = sizeof(addr);
         getpeername(clientSocket, (sockaddr*)&addr, &addrLen);
         char ipBuf[INET_ADDRSTRLEN];
         inet_ntop(AF_INET, &addr.sin_addr, ipBuf, INET_ADDRSTRLEN);

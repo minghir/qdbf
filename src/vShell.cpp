@@ -4,9 +4,6 @@
 
 #include <cwctype>
 
-#include <conio.h> // Pentru _kbhit() și _getwch()
-#include <fcntl.h>
-#include <io.h>
 
     vShell::vShell(IShellEngine& engine) : m_engine(engine), m_running(true) {}
     

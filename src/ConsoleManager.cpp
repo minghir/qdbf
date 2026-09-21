@@ -1,7 +1,9 @@
 ﻿#include "ConsoleManager.hpp"
 #include "stringUtils.hpp"
 #include <fcntl.h>
+#ifdef _WIN32
 #include <io.h>
+#endif
 #include <codecvt>
 #include <locale>
 #include <filesystem>
@@ -9,6 +11,7 @@
 
 
 void ConsoleManager::initialize() {
+#ifdef _WIN32
     AllocConsole();
     SetConsoleOutputCP(CP_UTF8);
 
@@ -28,13 +31,18 @@ void ConsoleManager::initialize() {
             SetConsoleMode(hOut, dwMode);
         }
     }
+#endif
 
     std::cout.clear();
     std::cerr.clear();
 }
 
 void ConsoleManager::setColor(WORD color) {
+#ifdef _WIN32
     SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), color);
+#else
+    (void)color;
+#endif
 }
 
 void ConsoleManager::resetColor() {

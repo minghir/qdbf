@@ -1,18 +1,7 @@
 #ifndef QDBFCONNECTION_HPP
 #define QDBFCONNECTION_HPP
 
-#ifndef WIN32_LEAN_AND_MEAN
-#define WIN32_LEAN_AND_MEAN
-#endif
-
-#ifndef _WINSOCKAPI_
-#define _WINSOCKAPI_   /* Previne windows.h să includă vechiul winsock.h */
-#endif
-#define WIN32_LEAN_AND_MEAN  // Exclude chestiile vechi/rare din windows.h
-
-#include <winsock2.h>
-#include <ws2tcpip.h>
-#include <windows.h>
+#include "../src/platform.hpp"
 
 
 
@@ -131,7 +120,13 @@ public:
 
         // Select returnează > 0 dacă sunt date de citit, 
         // sau dacă socket-ul a fost închis (event-ul de citire se declanșează la EOF)
-        int sel = select(0, &readSet, nullptr, nullptr, &timeout);
+            int sel = select(
+        #ifdef _WIN32
+                0,
+        #else
+                m_socket + 1,
+        #endif
+                &readSet, nullptr, nullptr, &timeout);
 
         if (sel > 0) {
             char buf;

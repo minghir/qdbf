@@ -12,7 +12,7 @@
 #include <cctype>
 #include <unordered_map>
 #include <regex>
-#include <windows.h>
+#include "platform.hpp"
 #include <cmath>
 
 using namespace std;

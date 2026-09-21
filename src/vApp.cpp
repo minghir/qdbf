@@ -1,6 +1,10 @@
 ﻿//#include "FontManager.hpp"
 #include "vApp.hpp"
 #include "dbConnection.hpp"
+#include <filesystem>
+#ifndef _WIN32
+#include <unistd.h>
+#endif
 
 
 // Inițializează pointerul static al instanței în afara clasei.
@@ -71,6 +75,7 @@ void vApp::startConsole() {
 }
 
 std::wstring vApp::getAppPath() const {
+#ifdef _WIN32
     wchar_t buffer[MAX_PATH] = { 0 };
     GetModuleFileNameW(m_instance, buffer, MAX_PATH);
 
@@ -80,9 +85,17 @@ std::wstring vApp::getAppPath() const {
         return path.substr(0, pos + 1); // Include separatorul final (\)
     }
     return L"";
+#else
+    std::string buffer(4096, '\0');
+    const ssize_t length = readlink("/proc/self/exe", buffer.data(), buffer.size() - 1);
+    if (length <= 0) return L"";
+    buffer.resize(static_cast<size_t>(length));
+    return std::filesystem::path(buffer).parent_path().wstring() + L"/";
+#endif
 }
 
 std::string vApp::getAppPathA() const {
+#ifdef _WIN32
     char buffer[MAX_PATH] = { 0 };
     GetModuleFileNameA(m_instance, buffer, MAX_PATH);
 
@@ -92,6 +105,9 @@ std::string vApp::getAppPathA() const {
         return path.substr(0, pos + 1); // Include separatorul final (\)
     }
     return "";
+#else
+    return std::filesystem::path(getAppPath()).string();
+#endif
 }
 
 std::wstring vApp::getAppSubPath(const std::wstring& relativePath) const {
