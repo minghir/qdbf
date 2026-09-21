@@ -30,15 +30,16 @@ Start the server, connect using the provided client shell, and run your standard
 
 ```sql
 -- Standard querying
-SELECT id, nume FROM persoane WHERE varsta > 18 ORDER BY nume ASC LIMIT 10;
+SELECT id, nume FROM persoane WHERE varsta > 18 ORDER BY nume ASC LIMIT 2;
 
 -- Complex Joins with tables containing spaces in their names
 SELECT p.nume, r.calitate 
 FROM "persoane - Copy" p 
-INNER JOIN rude r ON p.id = r.persoana_id;
+INNER JOIN rude r ON p.id = r.idpers;
 
 -- Subqueries (Derived Tables)
-SELECT nume FROM (SELECT * FROM persoane WHERE activ = 1) AS prs;
+SELECT * FROM persoane WHERE varsta > (SELECT AVG(varsta) FROM persoane)
+SELECT nume FROM (SELECT * FROM persoane WHERE varsta = 44 ) AS prs;
 ```
 ## 🚀 Getting Started
 Prerequisites
