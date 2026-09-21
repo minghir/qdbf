@@ -1,0 +1,27 @@
+# Linux / Make build artifacts
+build/
+*.o
+*.obj
+*.d
+
+# Compiled binaries and debug symbols
+*.exe
+*.out
+*.a
+*.so
+*.ilk
+*.pdb
+
+# Visual Studio user and build files
+.vs/
+*.suo
+*.user
+*.tlog/
+Debug/
+Release/
+x64/
+
+# Editor and OS files
+.vscode/
+*~
+.DS_Store
