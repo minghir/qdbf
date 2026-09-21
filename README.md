@@ -1,4 +1,4 @@
-# QDBF - Ultra-Fast C++ SQL Server for Legacy DBF Files 🚀
+# QDBF - Fast C++ SQL Server for Legacy DBF Files 🚀
 
 **QDBF** is a lightweight, high-performance database server written entirely from scratch in C++. It breathes new life into legacy dBase/FoxPro (`.dbf`) files by exposing them through a modern, robust SQL network interface. 
 
