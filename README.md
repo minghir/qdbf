@@ -54,8 +54,17 @@ git clone [https://github.com/minghir/qdbf.git](https://github.com/minghir/qdbf.
 ```
 * Open the project in your IDE (e.g., Visual Studio) or build using your Make/CMake setup.
 * Build the Server and Client executables.
-  
+
 # Running the Application
 * Place your .dbf files in the defined working directory (e.g., .\dbfs).
 * Start the QDBF Server.
 * Start the QDBF Client, login with your credentials (e.g., admin), and start typing SQL queries!
+
+## 🛣️ Roadmap
+* Move the core database engine into a standalone static library for easier integration into other C++ projects.
+* Implement nested function calls in the expression evaluator (e.g., UPPER(SUBSTR(nume, 1, 3))).
+* Advanced indexing for even faster data retrieval.
+  
+ ## 📝 License
+This project is licensed under the MIT License - see the LICENSE file for details.
+  
