@@ -33,7 +33,7 @@ Start the server, connect using the provided client shell, and run your standard
 SELECT id, nume FROM persoane WHERE varsta > 18 ORDER BY nume ASC LIMIT 10;
 
 -- Complex Joins with tables containing spaces in their names
-SELECT p.nume, r.grad_rudenie 
+SELECT p.nume, r.calitate 
 FROM "persoane - Copy" p 
 INNER JOIN rude r ON p.id = r.persoana_id;
 
