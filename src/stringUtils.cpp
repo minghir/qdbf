@@ -683,7 +683,7 @@ std::wstring normalize_number(const std::wstring& ws, int precision) {
         return woss.str();
     }
     catch (...) {
-        throw std::runtime_error("Normalizarea a eșuat: șir invalid.");
+        throw std::runtime_error("Normalization failed: invalid string.");
         //return L"";
     }
 }
@@ -712,7 +712,7 @@ std::wstring normalize_number(const std::wstring& ws, int precision) {
         return woss.str();
     }
     catch (const std::exception& e) {
-        LOG_ERROR(L"[normalize_number] Conversie eșuată pentru valoarea: '" + ws + L"'. Returnez 0.00");
+        LOG_ERROR(L"[normalize_number] Conversion failed for value: '" + ws + L"'. Returning 0.00");
 
         std::wostringstream woss;
         woss << std::fixed << std::setprecision(precision) << 0.0;

@@ -1,0 +1,64 @@
+/help
+help
+/connect admin:123@127.0.0.1
+/help
+/list_users
+/adduser mimi 123
+/adduser mimi 123 admin
+/quit
+/connect admin:123@127.0.0.1
+/list_users;
+/adduser mimi 123 ADMIN
+/q
+/quit
+/connect admin:123@127.0.0.1
+/adduser tt 11 0
+/list_users
+/dropuser tt
+/list_users
+/sessions
+/quit
+/connect admin:123@127.0.0.1
+/help
+SELECT * FROM persoane
+/quit
+/connect admin:123@127.0.0.1
+/help
+select * from persoane
+/save csv ./pers.csv
+/save dbf ./pers.dbf
+/quit
+/help
+/clear
+/list_users
+/connect admin:123@127.0.0.1 111
+/connect admin:123@127.0.0.1
+/help
+show tables
+desc persoane
+/load test1.csv into test_csv1
+/load ./test1.csv into test1_csv
+/quit
+/connect admin:123@127.0.0.1
+/load ./pers.csv into pers_csv
+select * from pers_csv
+desc pers_csv
+/load pers.dbf into pers_dbf;
+/load pers.dbf into pers_dbf
+select * from pers_dbf
+desc pers_dbf
+show tables
+desc test
+show tables
+make l
+/quit
+/connect admin:123@localhost
+/connect admin:123@127.0.0.1
+/help
+/QUIT
+/quit
+/connect admin:123@127.0.0.1
+/help
+show tables
+create table pers_as as select * from pers_csv
+/quit

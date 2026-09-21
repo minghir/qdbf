@@ -123,20 +123,20 @@ void ConsoleManager::log(const std::wstring& message, LogLevel level) {
 }
 
 void ConsoleManager::logTest() {
-    std::wcout << L"[TEST] Verificare diacritice în consolă: ș ț ă â î" << std::endl;
-    std::wcout << L"[TEST] Această linie ar trebui să apară albă." << std::endl;
+    std::wcout << L"[TEST] Checking console character support." << std::endl;
+    std::wcout << L"[TEST] This line should appear white." << std::endl;
     setColor(FOREGROUND_GREEN);
-    std::wcout << L"[TEST] Această linie ar trebui să apară verde." << std::endl;
+    std::wcout << L"[TEST] This line should appear green." << std::endl;
     setColor(FOREGROUND_RED);
-    std::wcout << L"[TEST] Această linie ar trebui să apară roșie." << std::endl;
+    std::wcout << L"[TEST] This line should appear red." << std::endl;
     setColor(FOREGROUND_BLUE);
-    std::wcout << L"[TEST] Această linie ar trebui să apară albastră." << std::endl;
+    std::wcout << L"[TEST] This line should appear blue." << std::endl;
     resetColor();
-    std::wcout << L"[TEST] Culoarea a fost resetată la alb." << std::endl;
+    std::wcout << L"[TEST] Color was reset to white." << std::endl;
 }
 
 void ConsoleManager::shutdown() {
-    log(L"Consola a fost închisă.");
+    log(L"Console closed.");
 }
 
 void ConsoleManager::writeRaw(const std::wstring& message, WORD color) {
@@ -179,7 +179,7 @@ bool ConsoleManager::enableFileLogging(const std::wstring& filePath) {
 
     if (logFile.is_open()) {
         logToFileEnabled = true;
-        log(L"Logarea în fișier a fost activată (UTF-8)", LogLevel::SUCCESS);
+        log(L"File logging enabled (UTF-8)", LogLevel::SUCCESS);
         return true;
     }
     return false;

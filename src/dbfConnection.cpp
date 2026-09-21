@@ -38,7 +38,7 @@ dbfConnection::dbfConnection(const std::string& type, const std::wstring& dsn)
     // Inițializări
     m_currentRowIndex = -1;
     m_error = L"";
-    LOG_DEBUG(L"Instantiat dbfConnection pentru: " + dsn);
+    LOG_DEBUG(L"Created dbfConnection for: " + dsn);
 }
 
 
@@ -95,14 +95,14 @@ bool dbfConnection::openDatabase() {
         m_isConnected = true;
         return true;
     }
-    m_error = L"Directorul nu exista: " + m_filePath;
+    m_error = L"Directory does not exist: " + m_filePath;
     return false;
 }
 
 
 bool dbfConnection::fetchNextRow(std::string stm_name) {
     if (m_statements.find(stm_name) == m_statements.end()) {
-        LOG_ERROR(L"STATEMENR UNKNOWN" + str_to_wstr(stm_name));
+        LOG_ERROR(L"Unknown statement: " + str_to_wstr(stm_name));
         return false; // Aici e buba dacă numele nu coincide
     }
 
@@ -152,9 +152,9 @@ std::vector<std::wstring> dbfConnection::fetchRow(std::string stm_name) {
 
     // DEBUG: Vedem ce e in Map vs ce cautam
     if (ctx->currentRowIndex == 0) { // printăm doar la primul rând
-        std::wcout << L"Cautam coloanele din SELECT: ";
+        std::wcout << L"Looking for SELECT columns: ";
         for (auto& c : ctx->colNames) std::wcout << L"[" << c << L"] ";
-        std::wcout << std::endl << L"In Map avem cheile: ";
+        std::wcout << std::endl << L"Map keys: ";
         for (auto const& [key, val] : currentMap) std::wcout << L"[" << key << L"] ";
         std::wcout << std::endl;
     }
@@ -176,7 +176,7 @@ std::vector<std::wstring> dbfConnection::fetchRow(std::string stm_name) {
 std::wstring dbfConnection::fetchFieldByName(const std::wstring& fieldName, std::string stm_name) {
     auto it = m_statements.find(stm_name);
     if (it == m_statements.end()) {
-        LOG_ERROR(L"fetchFieldByName: Statement-ul '" + str_to_wstr(stm_name) + L"' nu a fost gasit.");
+        LOG_ERROR(L"fetchFieldByName: Statement '" + str_to_wstr(stm_name) + L"' was not found.");
         return L"";
     }
 
@@ -203,7 +203,7 @@ std::wstring dbfConnection::fetchFieldByName(const std::wstring& fieldName, std:
         }
     }
 
-    LOG_ERROR(L"Campul '" + fieldName + L"' nu a fost gasit in handle: " + str_to_wstr(stm_name));
+    LOG_ERROR(L"Field '" + fieldName + L"' was not found in statement: " + str_to_wstr(stm_name));
     return L"";
 }
 
@@ -292,7 +292,7 @@ bool dbfConnection::execQuery(const std::wstring& query, std::string stm_name) {
                 vConResult subRes = subEngine.executeSubquery();
 
                 if (!subRes.success) {
-                    throw std::runtime_error("Eroare la evaluarea subquery-ului din FROM: " + wstr_to_str(subRes.message));
+                    throw std::runtime_error("Error evaluating the FROM subquery: " + wstr_to_str(subRes.message));
                 }
 
                 vConTable derivedTable = subRes.table;
@@ -431,7 +431,7 @@ const std::vector<vExternalColumnInfo> dbfConnection::getColumnsInfo(std::string
     // 1. Căutăm contextul statement-ului
     auto it = m_statements.find(stm_name);
     if (it == m_statements.end()) {
-        LOG_ERROR(L"getColumnsInfo: Statement-ul '" + str_to_wstr(stm_name) + L"' nu a fost găsit.");
+        LOG_ERROR(L"getColumnsInfo: Statement '" + str_to_wstr(stm_name) + L"' was not found.");
         return infoList;
     }
 
@@ -469,7 +469,7 @@ const std::vector<std::wstring>& dbfConnection::getColumnNames(std::string stm_n
     // 2. Fallback: Dacă statement-ul nu există, returnăm un vector gol static
     // (Asta previne crash-ul și respectă semnătura care cere o referință)
     static const std::vector<std::wstring> emptyVec;
-    LOG_ERROR(L"getColumnNames: Statement-ul '" + str_to_wstr(stm_name) + L"' nu a fost găsit.");
+    LOG_ERROR(L"getColumnNames: Statement '" + str_to_wstr(stm_name) + L"' was not found.");
     return emptyVec;
 }
 
@@ -527,8 +527,8 @@ bool dbfConnection::saveFile(const std::wstring& filename, const vConTable& tabl
         if (i < table.columnDecimals.size()) {
             fd.decimalCount = (uint8_t)table.columnDecimals[i];
             // DIAGNOSTIC:
-            LOG_DEBUG(L"Col: " + table.columns[i] + L" | Dec in Table: " + std::to_wstring(table.columnDecimals[i]));
-            LOG_DEBUG(L"Col: " + table.columns[i] + L" | Dec in Struct: " + std::to_wstring((int)fd.decimalCount));
+            LOG_DEBUG(L"Column: " + table.columns[i] + L" | Decimals in table: " + std::to_wstring(table.columnDecimals[i]));
+            LOG_DEBUG(L"Column: " + table.columns[i] + L" | Decimals in structure: " + std::to_wstring((int)fd.decimalCount));
         }
         else {
             fd.decimalCount = 0;
@@ -624,14 +624,14 @@ bool dbfConnection::appendRecords(const std::wstring& tableName, const vConTable
     std::fstream fs(std::filesystem::path(fullPath), std::ios::binary | std::ios::in | std::ios::out);
     //std::fstream fs(fullPath, std::ios::binary | std::ios::in | std::ios::out);
     if (!fs.is_open()) {
-        LOG_ERROR(L"Append failed: Nu s-a putut deschide fișierul " + fullPath);
+        LOG_ERROR(L"Append failed: Could not open file " + fullPath);
         return false;
     }
 
     // 3. Citire Header
     DBF_Header header;
     if (!fs.read(reinterpret_cast<char*>(&header), sizeof(DBF_Header))) {
-        LOG_ERROR(L"Eroare critică: Citirea header-ului a eșuat complet.");
+        LOG_ERROR(L"Critical error: Failed to read the header.");
         return false;
     }
 
@@ -647,7 +647,7 @@ bool dbfConnection::appendRecords(const std::wstring& tableName, const vConTable
     // Verificăm version != 3 dar și dacă headerLength este suspect de mică
    // 0x03 = dBase III, 0x30 = Visual FoxPro
     if (header.version != 0x03 && header.version != 0x30) {
-        LOG_ERROR(L"Versiune DBF neacceptată: " + std::to_wstring(header.version) + L". (Se aștepta 3 sau 48)");
+        LOG_ERROR(L"Unsupported DBF version: " + std::to_wstring(header.version) + L". (Expected 3 or 48)");
         return false;
     }
 
@@ -656,7 +656,7 @@ bool dbfConnection::appendRecords(const std::wstring& tableName, const vConTable
     fs.seekp(writePos, std::ios::beg);
 
     if (fs.fail()) {
-        LOG_ERROR(L"Eroare: Seekp la poziția " + std::to_wstring(writePos) + L" a eșuat.");
+        LOG_ERROR(L"Error: Seekp failed at position " + std::to_wstring(writePos) + L".");
         return false;
     }
 
@@ -692,7 +692,7 @@ bool dbfConnection::appendRecords(const std::wstring& tableName, const vConTable
     fs.flush(); // Ne asigurăm că datele sunt scrise fizic
     fs.close();
 
-    LOG_SUCCESS(L"Insert finalizat cu succes în " + tableName);
+    LOG_SUCCESS(L"Insert completed successfully in " + tableName);
     return true;
 }
 
@@ -709,14 +709,14 @@ bool dbfConnection::deleteRecords(const std::wstring& tableName, const std::vect
     std::fstream fs(std::filesystem::path(fullPath), std::ios::binary | std::ios::in | std::ios::out);
     //std::fstream fs(fullPath, std::ios::binary | std::ios::in | std::ios::out);
     if (!fs.is_open()) {
-        LOG_ERROR(L"Delete failed: Nu s-a putut deschide fișierul " + fullPath);
+        LOG_ERROR(L"Delete failed: Could not open file " + fullPath);
         return false;
     }
 
     // 3. Citire și Validare Header
     DBF_Header header;
     if (!fs.read(reinterpret_cast<char*>(&header), sizeof(DBF_Header))) {
-        LOG_ERROR(L"Eroare critică: Citirea header-ului a eșuat la DELETE.");
+        LOG_ERROR(L"Critical error: Failed to read the header for DELETE.");
         return false;
     }
 
@@ -726,7 +726,7 @@ bool dbfConnection::deleteRecords(const std::wstring& tableName, const std::vect
 
     // 4. Garda de siguranță (0x03 = dBase III, 0x30 = FoxPro)
     if (header.version != 0x03 && header.version != 0x30) {
-        LOG_ERROR(L"Eroare: Versiune DBF invalidă pentru DELETE (" + std::to_wstring(header.version) + L").");
+        LOG_ERROR(L"Error: Invalid DBF version for DELETE (" + std::to_wstring(header.version) + L").");
         return false;
     }
 
@@ -735,7 +735,7 @@ bool dbfConnection::deleteRecords(const std::wstring& tableName, const std::vect
     for (int idx : indices) {
         // Validăm indexul rândului față de ce scrie în header
         if (idx < 0 || idx >= (int)header.numRecords) {
-            LOG_DEBUG(L"Avertisment: Index " + std::to_wstring(idx) + L" în afara limitelor. Ignorat.");
+            LOG_DEBUG(L"Warning: Index " + std::to_wstring(idx) + L" is out of range. Ignored.");
             continue;
         }
 
@@ -753,7 +753,7 @@ bool dbfConnection::deleteRecords(const std::wstring& tableName, const std::vect
     fs.flush();
     fs.close();
 
-    LOG_SUCCESS(L"Delete finalizat. Rânduri marcate pentru ștergere: " + std::to_wstring(deletedCount));
+    LOG_SUCCESS(L"Delete completed. Rows marked for deletion: " + std::to_wstring(deletedCount));
     return true;
 }
 
@@ -770,14 +770,14 @@ bool dbfConnection::updateRecords(const std::wstring& tableName, const std::map<
   //  std::fstream fs(fullPath, std::ios::binary | std::ios::in | std::ios::out);
     std::fstream fs(std::filesystem::path(fullPath), std::ios::binary | std::ios::in | std::ios::out);
     if (!fs.is_open()) {
-        LOG_ERROR(L"Update failed: Nu s-a putut deschide fișierul " + fullPath);
+        LOG_ERROR(L"Update failed: Could not open file " + fullPath);
         return false;
     }
 
     // 3. Citire și Validare Header
     DBF_Header header;
     if (!fs.read(reinterpret_cast<char*>(&header), sizeof(DBF_Header))) {
-        LOG_ERROR(L"Eroare critică: Nu s-a putut citi header-ul pentru update.");
+        LOG_ERROR(L"Critical error: Could not read the header for update.");
         return false;
     }
 
@@ -787,13 +787,13 @@ bool dbfConnection::updateRecords(const std::wstring& tableName, const std::map<
 
     // 4. Garda de siguranță (Permitem 0x03 dBase și 0x30 FoxPro)
     if (header.version != 0x03 && header.version != 0x30) {
-        LOG_ERROR(L"Update abortat: Versiune DBF neacceptată (" + std::to_wstring(header.version) + L").");
+        LOG_ERROR(L"Update aborted: Unsupported DBF version (" + std::to_wstring(header.version) + L").");
         return false;
     }
 
     // Verificăm integritatea structurii
     if (header.headerLength == 0 || header.recordLength == 0) {
-        LOG_ERROR(L"Update failed: Structura header-ului indică lungimi nule.");
+        LOG_ERROR(L"Update failed: The header structure contains zero lengths.");
         return false;
     }
 
@@ -802,7 +802,7 @@ bool dbfConnection::updateRecords(const std::wstring& tableName, const std::map<
     for (auto const& [idx, newRow] : updates) {
         // Validare index rând
         if (idx < 0 || idx >= (int)header.numRecords) {
-            LOG_DEBUG(L"Update Skip: Index " + std::to_wstring(idx) + L" este în afara limitelor.");
+            LOG_DEBUG(L"Update skipped: Index " + std::to_wstring(idx) + L" is out of range.");
             continue;
         }
 
@@ -811,7 +811,7 @@ bool dbfConnection::updateRecords(const std::wstring& tableName, const std::map<
 
         fs.seekp(recordPos, std::ios::beg);
         if (fs.fail()) {
-            LOG_ERROR(L"Seek failed la indexul " + std::to_wstring(idx));
+            LOG_ERROR(L"Seek failed at index " + std::to_wstring(idx));
             continue;
         }
 
@@ -843,7 +843,7 @@ bool dbfConnection::updateRecords(const std::wstring& tableName, const std::map<
     fs.flush();
     fs.close();
 
-    LOG_SUCCESS(L"Update finalizat cu succes în " + tableName + L" (" + std::to_wstring(successCount) + L" rânduri)");
+    LOG_SUCCESS(L"Update completed successfully in " + tableName + L" (" + std::to_wstring(successCount) + L" rows)");
     return true;
 }
 
@@ -857,7 +857,7 @@ vConTable dbfConnection::loadTable(const QueryTable& tableInfo) {
 
     std::ifstream file(fullPath, std::ios::binary);
     if (!file.is_open()) {
-        throw std::runtime_error("Nu s-a putut deschide tabela: " + wstr_to_str(fullPath));
+        throw std::runtime_error("Could not open table: " + wstr_to_str(fullPath));
     }
 
     // --- Citire Header ---
@@ -900,7 +900,7 @@ vConTable dbfConnection::loadTable(const QueryTable& tableInfo) {
         // VALIDARE STRICTĂ: Un rând DBF valid începe DOAR cu ' ' (activ) sau '*' (șters)
         // Dacă rândul începe cu orice altceva (ca la 6ION Marian), înseamnă că datele sunt decalate.
         if (rowBuffer[0] != ' ' && rowBuffer[0] != '*') {
-            LOG_DEBUG(L"Aliniere gresita detectata la randul " + std::to_wstring(i));
+            LOG_DEBUG(L"Incorrect alignment detected at row " + std::to_wstring(i));
             // Aici poti decide daca sari peste el sau incerci sa te realiniezi
             continue;
         }
@@ -937,7 +937,7 @@ vConTable dbfConnection::loadTable(const QueryTable& tableInfo) {
     //std::fstream file(std::filesystem::path(fullPath), std::ios::binary );
     //std::ifstream file(fullPath, std::ios::binary);
     if (!file.is_open()) {
-        throw std::runtime_error("Nu s-a putut deschide tabela: " + wstr_to_str(fullPath));
+        throw std::runtime_error("Could not open table: " + wstr_to_str(fullPath));
     }
 
     // --- Citire Header ---
@@ -986,7 +986,7 @@ vConTable dbfConnection::loadTable(const QueryTable& tableInfo) {
 
         // Validare aliniere rând
         if (rowBuffer[0] != ' ' && rowBuffer[0] != '*') {
-            LOG_DEBUG(L"Aliniere gresita detectata la randul " + std::to_wstring(i));
+            LOG_DEBUG(L"Incorrect alignment detected at row " + std::to_wstring(i));
             continue;
         }
 
@@ -1041,7 +1041,7 @@ void dbfConnection::createBackup(const std::wstring& fullPath) {
         }
     }
     catch (const std::exception& e) {
-        LOG_ERROR(L"Eroare la crearea backup-ului: " + str_to_wstr(e.what()));
+        LOG_ERROR(L"Error creating backup: " + str_to_wstr(e.what()));
     }
 }
 
@@ -1067,7 +1067,7 @@ bool dbfConnection::packTable(const std::wstring& tableName) {
     }
 
     if (liveData.columns.empty()) {
-        LOG_ERROR(L"PACK Error: Nu s-au putut citi datele pentru " + tableName);
+        LOG_ERROR(L"PACK error: Could not read data for " + tableName);
         return false;
     }
 
@@ -1078,7 +1078,7 @@ bool dbfConnection::packTable(const std::wstring& tableName) {
     bool success = saveFile(fullPath, liveData);
 
     if (success) {
-        LOG_SUCCESS(L"PACK finalizat. Fișierul a fost reconstruit fizic.");
+        LOG_SUCCESS(L"PACK completed. The file was physically rebuilt.");
         // IMPORTANT: Dacă ai un sistem de caching în dbfConnection (ex: m_loadedTables), 
         // trebuie să ștergi cache-ul pentru acest tabel ca următorul SELECT să citească varianta nouă de pe disc.
     }
@@ -1087,7 +1087,7 @@ bool dbfConnection::packTable(const std::wstring& tableName) {
 }
 
 bool dbfConnection::createTable(const std::wstring& query) {
-    LOG_DEBUG(L"--- SUNT IN FISIERUL CORECT? DA! ---"); // <--- ADAUGA ASTA
+    LOG_DEBUG(L"--- ENTERED THE CORRECT FILE ---");
     try {
         std::wstring upperQuery = to_upper(query);
 
@@ -1096,7 +1096,7 @@ bool dbfConnection::createTable(const std::wstring& query) {
         size_t endParen = query.find_last_of(L')');
 
         if (tablePos == std::wstring::npos || startParen == std::wstring::npos || endParen == std::wstring::npos) {
-            LOG_ERROR(L"CREATE TABLE: Eroare de sintaxa.");
+            LOG_ERROR(L"CREATE TABLE: Syntax error.");
             return false;
         }
 
@@ -1107,7 +1107,7 @@ bool dbfConnection::createTable(const std::wstring& query) {
         std::wstring fullPath = (std::filesystem::path(m_filePath) / fileName).wstring();
 
         if (std::filesystem::exists(fullPath)) {
-            LOG_ERROR(L"CREATE TABLE: Tabelul '" + tableName + L"' exista deja!");
+            LOG_ERROR(L"CREATE TABLE: Table '" + tableName + L"' already exists!");
             return false;
         }
 
@@ -1168,7 +1168,7 @@ bool dbfConnection::createTable(const std::wstring& query) {
                     }
                 }
                 else {
-                    LOG_DEBUG(L"DEBUG: Nu am intrat in IF-ul de paranteze!");
+                    LOG_DEBUG(L"DEBUG: The parentheses condition was not entered.");
                 }
             }
             else {
@@ -1183,7 +1183,7 @@ bool dbfConnection::createTable(const std::wstring& query) {
 
         // Verificare asimetrie inainte de log-ul final (safety check)
         if (newTable.columns.size() != newTable.columnDecimals.size()) {
-            LOG_ERROR(L"CRITICAL: Eroare interna de structura. Vectori asimetrici!");
+            LOG_ERROR(L"CRITICAL: Internal structure error. Vector sizes do not match!");
             return false;
         }
 
@@ -1196,12 +1196,12 @@ bool dbfConnection::createTable(const std::wstring& query) {
         }
 
         if (newTable.columns.empty()) {
-            LOG_ERROR(L"CREATE TABLE: Nu a fost detectata nicio coloana valida.");
+            LOG_ERROR(L"CREATE TABLE: No valid columns were detected.");
             return false;
         }
 
         bool ok = saveFile(fullPath, newTable);
-        if (ok) LOG_SUCCESS(L"Tabel creat cu succes: " + fullPath);
+        if (ok) LOG_SUCCESS(L"Table created successfully: " + fullPath);
         return ok;
 
     }
@@ -1217,7 +1217,7 @@ bool dbfConnection::dropTable(const std::wstring& query) {
         size_t tablePos = upperQuery.find(L"TABLE");
 
         if (tablePos == std::wstring::npos) {
-            LOG_ERROR(L"DROP TABLE: Sintaxă incorectă.");
+            LOG_ERROR(L"DROP TABLE: Invalid syntax.");
             return false;
         }
 
@@ -1229,7 +1229,7 @@ bool dbfConnection::dropTable(const std::wstring& query) {
             tableName = tableName.substr(1, tableName.size() - 2);
 
         if (tableName.empty()) {
-            LOG_ERROR(L"DROP TABLE: Numele tabelului lipsește.");
+            LOG_ERROR(L"DROP TABLE: Table name is missing.");
             return false;
         }
 
@@ -1238,13 +1238,13 @@ bool dbfConnection::dropTable(const std::wstring& query) {
 
         // Verificăm dacă fișierul există înainte de a încerca să-l ștergem
         if (!std::filesystem::exists(fullPath)) {
-            LOG_ERROR(L"DROP TABLE: Tabelul '" + tableName + L"' nu a fost găsit.");
+            LOG_ERROR(L"DROP TABLE: Table '" + tableName + L"' was not found.");
             return false;
         }
 
         // Ștergerea fizică
         if (std::filesystem::remove(fullPath)) {
-            LOG_SUCCESS(L"Tabelul '" + tableName + L"' a fost șters cu succes.");
+            LOG_SUCCESS(L"Table '" + tableName + L"' was deleted successfully.");
 
             // OPȚIONAL: Ștergem și fișierul de index (.cdx / .idx) dacă există
             std::wstring indexFile = ensureExtension(tableName, L".cdx");
@@ -1257,7 +1257,7 @@ bool dbfConnection::dropTable(const std::wstring& query) {
             return true;
         }
         else {
-            LOG_ERROR(L"DROP TABLE: Nu s-a putut șterge fișierul. Posibil să fie deschis în altă aplicație.");
+            LOG_ERROR(L"DROP TABLE: Could not delete the file. It may be open in another application.");
             return false;
         }
 
@@ -1396,7 +1396,7 @@ bool dbfConnection::alterTable(const std::wstring& query) {
     }
 
     if (actionPos == std::wstring::npos) {
-        LOG_ERROR(L"ALTER TABLE: Actiune necunoscuta (nevoie de ADD, DROP sau MODIFY).");
+            LOG_ERROR(L"ALTER TABLE: Unknown action (expected ADD, DROP, or MODIFY).");
         return false;
     }
 
@@ -1454,11 +1454,11 @@ bool dbfConnection::alterDropColumn(const std::wstring& tableName, const std::ws
         }
 
         if (colIdx == -1) {
-            LOG_ERROR(L"ALTER TABLE: Coloana '" + colName + L"’ nu exista în tabelul " + tableName);
+            LOG_ERROR(L"ALTER TABLE: Column '" + colName + L"' does not exist in table " + tableName);
             return false;
         }
 
-        LOG_DEBUG(L"ALTER TABLE: Eliminam coloana " + targetCol + L" de la indexul " + std::to_wstring(colIdx));
+        LOG_DEBUG(L"ALTER TABLE: Removing column " + targetCol + L" at index " + std::to_wstring(colIdx));
 
         // 3. Eliminăm metadata coloanei
         table.columns.erase(table.columns.begin() + colIdx);
@@ -1483,7 +1483,7 @@ bool dbfConnection::alterDropColumn(const std::wstring& tableName, const std::ws
 
         bool ok = saveFile(fullPath, table);
         if (ok) {
-            LOG_SUCCESS(L"Coloana '" + colName + L"' a fost eliminata cu succes.");
+            LOG_SUCCESS(L"Column '" + colName + L"' was removed successfully.");
         }
         return ok;
 
@@ -1514,7 +1514,7 @@ bool dbfConnection::alterAddColumn(const std::wstring & tableName, const std::ws
         // 3. Folosim logica de parser pentru a extrage Nume, Tip, Width, Dec
         size_t firstSpace = colDef.find_first_of(L" \t");
         if (firstSpace == std::wstring::npos) {
-            LOG_ERROR(L"ALTER ADD: Definitie coloana invalida. Exemplu: ADD nume C(10)");
+            LOG_ERROR(L"ALTER ADD: Invalid column definition. Example: ADD name C(10)");
             return false;
         }
 
@@ -1559,7 +1559,7 @@ bool dbfConnection::alterAddColumn(const std::wstring & tableName, const std::ws
         std::wstring fullPath = (std::filesystem::path(m_filePath) / fileName).wstring();
 
         bool ok = saveFile(fullPath, table);
-        if (ok) LOG_SUCCESS(L"Coloana '" + colName + L"' a fost adaugata cu succes.");
+        if (ok) LOG_SUCCESS(L"Column '" + colName + L"' was added successfully.");
         return ok;
 
     }
@@ -1596,7 +1596,7 @@ bool dbfConnection::alterModifyColumn(const std::wstring& tableName, const std::
         for (int i = 0; i < (int)table.columns.size(); ++i) {
             if (to_upper(table.columns[i]) == targetCol) { colIdx = i; break; }
         }
-        if (colIdx == -1) { LOG_ERROR(L"MODIFY: Coloana inexistenta."); return false; }
+        if (colIdx == -1) { LOG_ERROR(L"MODIFY: Column does not exist."); return false; }
 
         // Aflam noile Width/Dec (refolosim logica de la ADD)
         int newW = 10, newD = 0;
@@ -1636,7 +1636,7 @@ bool dbfConnection::alterModifyColumn(const std::wstring& tableName, const std::
         std::wstring fullPath = (std::filesystem::path(m_filePath) / fileName).wstring();
 
         bool ok = saveFile(fullPath, table);
-        if (ok) LOG_SUCCESS(L"Coloana '" + targetCol + L"' a fost modificata.");
+        if (ok) LOG_SUCCESS(L"Column '" + targetCol + L"' was modified.");
         return ok;
 
     }
@@ -1663,7 +1663,7 @@ std::vector<vExternalColumnInfo> dbfConnection::getTableSchema(const std::wstrin
     //std::ifstream file(fullPath, std::ios::binary);
     std::ifstream file(std::filesystem::path(fullPath), std::ios::binary);
     if (!file.is_open()) {
-        m_error = L"getTableSchema: Nu s-a putut deschide fisierul: " + fullPath;
+        m_error = L"getTableSchema: Could not open file: " + fullPath;
         return columns;
     }
 

@@ -156,7 +156,7 @@ std::wstring wformat_pretty_table(const vConTable& table) {
 void vSqlShellEngine::executeSQLCommand(const std::wstring& command) {
     // 1. Verificare conexiune înainte de trimitere
     if (!con || !con->isConnected()) {
-        LOG_ERROR(L"EROARE: Serverul este offline!");
+        LOG_ERROR(L"ERROR: The server is offline!");
         m_running = false;
         std::this_thread::sleep_for(std::chrono::milliseconds(500));
         exit(0);
@@ -170,7 +170,7 @@ void vSqlShellEngine::executeSQLCommand(const std::wstring& command) {
         // Detectare semnal de broadcasting (Shutdown dat de altcineva)
         if (result.message == L"SERVER_SHUTDOWN_SIGNAL" ||
             result.message == L"SERVER_SHUTDOWN_FORCE_CLOSE") {
-            LOG_WARNING(L"Deconectare: Serverul a fost oprit de administrator.");
+            LOG_WARNING(L"Disconnected: The server was shut down by an administrator.");
             m_running = false;
             std::this_thread::sleep_for(std::chrono::milliseconds(800));
             exit(0);
@@ -178,7 +178,7 @@ void vSqlShellEngine::executeSQLCommand(const std::wstring& command) {
         }
 
         if (!result.success) {
-            LOG_ERROR(L"Eroare Server: " + con->getError());
+            LOG_ERROR(L"Server error: " + con->getError());
 
             return;
         }
@@ -199,10 +199,10 @@ void vSqlShellEngine::executeSQLCommand(const std::wstring& command) {
     else {
         // Dacă execQuery a eșuat (ex: timeout sau socket closed)
         if (!con->isConnected()) {
-            LOG_ERROR(L"Conexiune pierdută cu serverul!");
+            LOG_ERROR(L"Connection to the server was lost!");
             exit(0);
         }
-        LOG_ERROR(L"Eroare SQL: " + con->getError());
+        LOG_ERROR(L"SQL error: " + con->getError());
     }
 }
 
@@ -212,13 +212,16 @@ void vSqlShellEngine::executeShellCommand(const std::wstring& command) {
 
         if (!cmd.isValid) return;
 
+    std::transform(cmd.name.begin(), cmd.name.end(), cmd.name.begin(),
+        [](wchar_t character) { return std::towlower(character); });
+
         auto it = m_handlers.find(cmd.name);
         if (it != m_handlers.end()) {
             // EROAREA ERA AICI: Trebuie să trimiți cmd.args, nu cmd (care e tot obiectul)
             it->second(cmd);
         }
         else {
-            LOG_ERROR(L"Comanda " + cmd.name + L" nu are un handler înregistrat.");
+            LOG_ERROR(L"Command " + cmd.name + L" has no registered handler.");
         }
 }
 
@@ -227,6 +230,8 @@ void vSqlShellEngine::registerDefaultHandlers() {
     m_handlers[L"/quit"] = [this](auto& args) { return handleExit(args); };
     m_handlers[L"/clear"] = [this](auto& args) { return handleClear(args); };
     m_handlers[L"/help"] = [this](auto& args) { return handleHelp(args); };
+    m_handlers[L"/save"] = [this](auto& args) { return handleSave(args); };
+    m_handlers[L"/load"] = [this](auto& args) { return handleLoad(args); };
     m_handlers[L"/connect"] = [this](auto& args) { return handleConnect(args); };
     m_handlers[L"/adduser"] = [this](auto& args) { return handleAddUserRemote(args); };
     m_handlers[L"/dropuser"] = [this](auto& args) { return handleDropUserRemote(args); };
@@ -245,14 +250,26 @@ bool vSqlShellEngine::handleExit(const ShellCommand& cmd) {
 }
 
 bool vSqlShellEngine::handleHelp(const ShellCommand& cmd) {
-    LOG_INFO(L"PRITN HELP");
+    LOG_INFO(L"Help is not available for this shell.");
     return true;
+}
+
+bool vSqlShellEngine::handleSave(const ShellCommand& cmd) {
+    (void)cmd;
+    LOG_ERROR(L"The /save command is not available for this client.");
+    return false;
+}
+
+bool vSqlShellEngine::handleLoad(const ShellCommand& cmd) {
+    (void)cmd;
+    LOG_ERROR(L"The /load command is not available for this client.");
+    return false;
 }
 
 
 bool vSqlShellEngine::handleAddUserRemote(const ShellCommand& cmd) {
     if (cmd.args.size() < 3) {
-        LOG_ERROR(L"Utilizare: /adduser <nume> <parola> <rol>");
+        LOG_ERROR(L"Usage: /adduser <name> <password> <role>");
         return false;
     }
 
@@ -262,11 +279,11 @@ bool vSqlShellEngine::handleAddUserRemote(const ShellCommand& cmd) {
     // Folosim execQuery-ul existent! 
     // Serverul o va primi și va trebui să știe să o trateze.
     if (con->execQuery(fullCmd)) {
-        LOG_SUCCESS(L"Comanda a fost executată cu succes pe server.");
+        LOG_SUCCESS(L"Command executed successfully on the server.");
         return true;
     }
     else {
-        LOG_ERROR(L"Serverul a respins comanda: " + con->getError());
+        LOG_ERROR(L"The server rejected the command: " + con->getError());
         return false;
     }
 }
@@ -279,7 +296,7 @@ bool vSqlShellEngine::handleListUsersRemote(const ShellCommand& cmd) {
         vConResult res = con->getLastQueryResult();
 
         if (!res.success) {
-            LOG_ERROR(L"Eroare server: " + res.message);
+            LOG_ERROR(L"Server error: " + res.message);
             return false;
         }
 
@@ -298,7 +315,7 @@ bool vSqlShellEngine::handleListUsersRemote(const ShellCommand& cmd) {
         return true;
     }
     else {
-        LOG_ERROR(L"Serverul a respins comanda: " + con->getError());
+        LOG_ERROR(L"The server rejected the command: " + con->getError());
         return false;
     }
 }
@@ -306,7 +323,7 @@ bool vSqlShellEngine::handleListUsersRemote(const ShellCommand& cmd) {
 bool vSqlShellEngine::handleDropUserRemote(const ShellCommand& cmd) {
     // 1. Verificăm dacă avem argumentul necesar (numele utilizatorului)
     if (cmd.args.empty()) {
-        LOG_ERROR(L"Utilizare: /dropuser <nume_utilizator>");
+        LOG_ERROR(L"Usage: /dropuser <username>");
         return false;
     }
 
@@ -324,18 +341,18 @@ bool vSqlShellEngine::handleDropUserRemote(const ShellCommand& cmd) {
             return true;
         }
         else {
-            LOG_ERROR(L"Eroare server: " + res.message);
+            LOG_ERROR(L"Server error: " + res.message);
             return false;
         }
     }
     else {
-        LOG_ERROR(L"Eroare retea: " + con->getError());
+        LOG_ERROR(L"Network error: " + con->getError());
         return false;
     }
 }
 
 bool vSqlShellEngine::handleShutdownRemote(const ShellCommand& cmd) {
-    ConsoleManager::getInstance().writeRaw(L"[INFO] Trimitere cerere de oprire server...\n", FOREGROUND_INTENSITY);
+    ConsoleManager::getInstance().writeRaw(L"[INFO] Sending server shutdown request...\n", FOREGROUND_INTENSITY);
 
     if (con->execQuery(L"/shutdown")) {
         vConResult res = con->getLastQueryResult();
@@ -345,7 +362,7 @@ bool vSqlShellEngine::handleShutdownRemote(const ShellCommand& cmd) {
             // Setăm flag-ul de oprire
             m_running = false;
 
-            LOG_WARNING(L"Serverul se oprește. Închidem consola...");
+            LOG_WARNING(L"The server is shutting down. Closing the console...");
             std::this_thread::sleep_for(std::chrono::milliseconds(500));
 
             // EXIT(0) aici este obligatoriu pentru că vShell::run() 
@@ -363,7 +380,7 @@ bool vSqlShellEngine::handleSessionsRemote(const ShellCommand& cmd) {
         if (res.success) {
             std::wstring tableStr = wformat_pretty_table(res.table);
             ConsoleManager::getInstance().writeRaw(tableStr, FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE);
-            LOG_SUCCESS(L"Total: " + std::to_wstring(res.rowsAffected) + L" utilizatori online.");
+            LOG_SUCCESS(L"Total: " + std::to_wstring(res.rowsAffected) + L" users online.");
             return true;
         }
         LOG_ERROR(res.message);
@@ -375,7 +392,7 @@ bool vSqlShellEngine::shouldExit() const {
     // Dacă am setat manual m_running = false SAU dacă am pierdut conexiunea
     if (!m_running) return true;
     if (con && !con->isConnected()) {
-        LOG_ERROR(L"Conexiunea cu serverul a fost pierdută.");
+        LOG_ERROR(L"The connection to the server was lost.");
         return true;
     }
     return false;

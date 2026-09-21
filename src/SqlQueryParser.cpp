@@ -323,7 +323,7 @@ bool SqlQueryParser::parse() {
     }
 
     
-    return setError(L"Comandă SQL necunoscută: " + firstWord);
+    return setError(L"Unknown SQL command: " + firstWord);
 
 }
 
@@ -389,7 +389,7 @@ bool SqlQueryParser::parseSelect() {
     size_t offsetPos = findOutsideParens(sql, L"OFFSET");
 
     if (selectPos == std::wstring::npos) {
-        return setError(L"Query-ul trebuie să înceapă cu SELECT.");
+        return setError(L"The query must start with SELECT.");
     }
     size_t selectEnd = (fromPos != std::wstring::npos) ? fromPos : sql.size();
     // --- A. Procesăm SELECT (între SELECT și FROM) ---
@@ -489,7 +489,7 @@ bool SqlQueryParser::parseSelect() {
         try {
             query.offset = std::stoi(offsetStr);
         }
-        catch (...) { return setError(L"Valoare OFFSET invalidă.", offsetStr); }
+        catch (...) { return setError(L"Invalid OFFSET value.", offsetStr); }
     }
 
     return true;
@@ -499,7 +499,7 @@ bool SqlQueryParser::parseSelect() {
 
 bool SqlQueryParser::parseSelect(std::wstring section) {
     section = wstr_trim(section);
-    if (section.empty()) return setError(L"Clauza SELECT este goală.");
+    if (section.empty()) return setError(L"The SELECT clause is empty.");
 
     // --- 1. Verificare DISTINCT ---
     std::wstring upperSection = to_upper(section);
@@ -561,7 +561,7 @@ bool SqlQueryParser::parseSelect(std::wstring section) {
 
         // --- 4. Validarea expresiei ---
         if (col.rawExpression.empty()) {
-            return setError(L"Expresie invalidă în clauza SELECT.");
+            return setError(L"Invalid expression in the SELECT clause.");
         }
 
         // ⭐ 5. MAGIA NOUĂ: Generarea arborelui AST pentru evaluări complexe ⭐
@@ -584,7 +584,7 @@ bool SqlQueryParser::parseSelect(std::wstring section) {
             SqlQueryParser subParser(subSql, *col.subSelect);
 
             if (!subParser.parseSelect()) {
-                return setError(L"Eroare la parsarea subquery-ului: " + subSql);
+                return setError(L"Error parsing subquery: " + subSql);
             }
         }
 
@@ -609,7 +609,7 @@ bool SqlQueryParser::parseFrom(std::wstring section) {
     if (trimmedSection.front() == L'(') {
         size_t lastParen = trimmedSection.find_last_of(L')');
         if (lastParen == std::wstring::npos) {
-            return setError(L"Paranteză neînchisă pentru subquery în FROM.", trimmedSection);
+            return setError(L"Unclosed parenthesis for the FROM subquery.", trimmedSection);
         }
 
         QueryTable qt;
@@ -621,13 +621,13 @@ bool SqlQueryParser::parseFrom(std::wstring section) {
         qt.subSelect = std::make_shared<Query>();
         SqlQueryParser subParser(subQueryStr, *qt.subSelect);
         if (!subParser.parseSelect()) {
-            return setError(L"Eroare în subquery-ul din FROM: " + subParser.getLastError().message, subQueryStr);
+            return setError(L"Error in the FROM subquery: " + subParser.getLastError().message, subQueryStr);
         }
 
         // Extragem alias-ul obligatoriu (ex: AS prs)
         std::wstring remaining = wstr_trim(trimmedSection.substr(lastParen + 1));
         if (remaining.empty()) {
-            return setError(L"Subquery-urile din clauza FROM trebuie să aibă un alias (ex: FROM (...) AS t).", trimmedSection);
+            return setError(L"FROM subqueries must have an alias (e.g. FROM (...) AS t).", trimmedSection);
         }
 
         if (to_upper(remaining).substr(0, 3) == L"AS ") {
@@ -650,7 +650,7 @@ bool SqlQueryParser::parseFrom(std::wstring section) {
 
         QueryTable qt;
         if (!parseSingleTableSource(cleanToken, qt)) {
-            return setError(L"Sursă invalidă în FROM.", cleanToken);
+            return setError(L"Invalid FROM source.", cleanToken);
         }
 
         // Deoarece am golit manual fromTable mai sus, primul token va intra mereu aici:
@@ -1084,7 +1084,7 @@ void Query::printJoins() {
     LOG_INFO(L"--- [ Query Sources & Joins ] ---");
 
     if (fromTable.name.empty() && joins.empty()) {
-        LOG_WARNING(L"Sursă goală (Virtual Dual Table / Constant Select).");
+        LOG_WARNING(L"Empty source (Virtual Dual Table / Constant Select).");
         return;
     }
 
@@ -1115,7 +1115,7 @@ void Query::printJoins() {
 
         // Dacă avem condiții ON (pentru JOIN-uri explicite), le putem lista aici
         if (!joins[i].on_conditions.empty()) {
-            LOG(L"       ON: (condiții prezente)");
+            LOG(L"       ON: (conditions present)");
         }
     }
     LOG(L"------------------------------------------------------------");

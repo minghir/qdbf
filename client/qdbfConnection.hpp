@@ -193,14 +193,14 @@ public:
     // lăsând clientul să verifice `m_lastResult.success` pentru statusul SQL/comandă.
     bool execQuery(const std::wstring& query, std::string stm_name = "default") override {
         if (!isConnected()) {
-            m_error = L"Nu există o conexiune activă la server.";
+            m_error = L"There is no active connection to the server.";
             return false;
         }
 
         // 1. Trimitem query-ul
         std::string qStr(query.begin(), query.end());
         if (send(m_socket, qStr.c_str(), (int)qStr.length(), 0) == SOCKET_ERROR) {
-            m_error = L"Eroare la trimiterea datelor prin socket.";
+            m_error = L"Error sending data through the socket.";
             return false;
         }
 
@@ -208,7 +208,7 @@ public:
         uint32_t packetSize = 0;
         int r = recv(m_socket, (char*)&packetSize, sizeof(packetSize), 0);
         if (r <= 0) {
-            m_error = L"Conexiunea a fost închisă de server.";
+            m_error = L"The connection was closed by the server.";
             return false;
         }
 
@@ -218,7 +218,7 @@ public:
         while (receivedTotal < packetSize) {
             int n = recv(m_socket, buffer.data() + receivedTotal, packetSize - receivedTotal, 0);
             if (n <= 0) {
-                m_error = L"Conexiunea a fost întreruptă în timpul recepției datelor.";
+                m_error = L"The connection was interrupted while receiving data.";
                 return false;
             }
             receivedTotal += n;
@@ -349,7 +349,7 @@ private:
         if (bytes > 0) {
             std::string respStr(response);
             if (respStr.find("Success") == std::string::npos) {
-                m_error = L"Autentificare eșuată: " + std::wstring(respStr.begin(), respStr.end());
+                m_error = L"Authentication failed: " + std::wstring(respStr.begin(), respStr.end());
                 closesocket(m_socket);
                 m_socket = INVALID_SOCKET;
                 return false;

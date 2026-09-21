@@ -41,14 +41,14 @@ public:
 
         vNetworkServer server;
         server.loadUsers(users_file);
-        LOG_INFO(L"Pornire aplicație în mod SERVER...");
+            LOG_INFO(L"Starting application in SERVER mode...");
         if (server.init(port)) { // Ascultăm pe portul 8080
             // 3. Rulăm serverul. Acesta va bloca firul de execuție 
             // și va procesa cererile venite prin rețea
             server.run(shEngine);
         }
         else {
-            LOG_FATAL(L"Nu s-a putut inițializa serverul pe portul:" + to_wstring<int>(port));
+            LOG_FATAL(L"Could not initialize the server on port: " + to_wstring<int>(port));
             return false;
         }
         return true;
@@ -68,10 +68,10 @@ int main(int argc, char* argv[]) {
 
     // Încercăm să încărcăm fișierul. Dacă nu există, folosim valori default.
     if (loader.load("./qdbf.cfg")) {
-        std::cout << "[CONFIG] Fisier de configurare incarcat cu succes.\n";
+        std::cout << "[CONFIG] Configuration file loaded successfully.\n";
     }
     else {
-        std::cout << "[CONFIG] Atentie: Nu s-a gasit qdbf.cfg. Se folosesc valori default.\n";
+        std::cout << "[CONFIG] Warning: qdbf.cfg was not found. Using default values.\n";
     }
 
 

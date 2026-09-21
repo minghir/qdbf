@@ -109,7 +109,7 @@ public:
         m_userFilePath = filePath;
         std::ifstream fin(wstr_to_str(filePath));
         if (!fin.is_open()) {
-            LOG_ERROR(L"Nu s-a putut deschide fisierul de useri. Fallback: admin/123.");
+            LOG_ERROR(L"Could not open the user file. Falling back to admin/123.");
             m_users[L"admin"] = { L"admin", L"123", UserRole::ADMIN };
             return;
         }
@@ -132,7 +132,7 @@ public:
                 m_users[str_to_wstr(user)] = { str_to_wstr(user), str_to_wstr(pass), role };
             }
         }
-        LOG_SUCCESS(L"Incarcat " + std::to_wstring(m_users.size()) + L" utilizatori.");
+        LOG_SUCCESS(L"Loaded " + std::to_wstring(m_users.size()) + L" users.");
     }
 
     bool init(int port) {
@@ -212,7 +212,7 @@ private:
         }
 
         if (!authenticated) {
-            LOG_ERROR(L"[" + clientIP + L"] Acces respins pentru utilizatorul: " + (user.empty() ? L"(null)" : user));
+            LOG_ERROR(L"[" + clientIP + L"] Access denied for user: " + (user.empty() ? L"(null)" : user));
             send(clientSocket, "Login Failed!\n", 14, 0);
             closesocket(clientSocket);
             return;
@@ -276,9 +276,9 @@ private:
                 if (currentUser.role != UserRole::ADMIN) {
                     vConResult res;
                     res.success = false;
-                    res.message = L"Eroare: Această comandă necesită drepturi de ADMINISTRATOR.";
+                    res.message = L"Error: This command requires ADMINISTRATOR privileges.";
 
-                    LOG_WARNING(L"[" + user + L"] Tentativă neautorizată la comandă de sistem!");
+                    LOG_WARNING(L"[" + user + L"] Unauthorized attempt to execute a system command!");
 
                     std::vector<char> data = serializeResult(res);
                     uint32_t packetSize = static_cast<uint32_t>(data.size());
@@ -292,7 +292,7 @@ private:
                     vConResult res; // Creăm un obiect de rezultat standard
 
                     if (currentUser.role != UserRole::ADMIN) {
-                        LOG_WARNING(L"[" + user + L"] Tentativă neautorizată!");
+                        LOG_WARNING(L"[" + user + L"] Unauthorized attempt!");
                         res.success = false;
                         res.message = L"Error: Admin rights required.";
                     }
@@ -317,7 +317,7 @@ private:
                 if (msg.find("/list_users") == 0) {
                     vConResult res;
                     res.success = true;
-                    res.message = L"Lista utilizatori sistem:";
+                    res.message = L"System users:";
 
                     // Definim coloanele tabelului de rezultate
                     res.table.columns = { L"USERNAME", L"ROLE" };
@@ -392,7 +392,7 @@ private:
                     if (currentUser.role != UserRole::ADMIN) {
                         vConResult res;
                         res.success = false;
-                        res.message = L"Eroare: Doar administratorul poate opri serverul.";
+                        res.message = L"Error: Only an administrator can shut down the server.";
 
                         std::vector<char> data = serializeResult(res);
                         uint32_t packetSize = static_cast<uint32_t>(data.size());
@@ -400,7 +400,7 @@ private:
                         send(clientSocket, data.data(), (int)data.size(), 0);
                     }
                     else {
-                        LOG_WARNING(L"!!! Comandă SHUTDOWN primită de la " + user + L" !!!");
+                        LOG_WARNING(L"!!! SHUTDOWN command received from " + user + L" !!!");
 
                         // 1. Pregătim mesajul de notificare pentru TOȚI clienții
                         vConResult shutRes;
@@ -440,7 +440,7 @@ private:
                         m_running = false;
                         closesocket(listenSocket);
 
-                        LOG_SUCCESS(L"Serverul s-a oprit controlat.");
+                        LOG_SUCCESS(L"The server shut down gracefully.");
                         exit(0);
                     }
                     continue;
@@ -449,7 +449,7 @@ private:
                 if (msg.find("/sessions") == 0) {
                     vConResult res;
                     res.success = true;
-                    res.message = L"Sesiuni active pe server:";
+                    res.message = L"Active server sessions:";
                     res.table.tableName = L"ActiveSessions";
                     res.table.columns = { L"USER", L"IP ADDRESS", L"ROLE" };
 
@@ -529,7 +529,7 @@ private:
         std::string rStr; // Citim rolul ca string întâi pentru siguranță
 
         if (!(ss >> tag >> u >> p >> rStr)) {
-            LOG_ERROR(L"Format invalid pentru /adduser!");
+            LOG_ERROR(L"Invalid format for /adduser!");
             return;
         }
 

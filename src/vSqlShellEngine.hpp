@@ -42,6 +42,8 @@ std::wstring wformat_pretty_table(const vConTable& table);
         virtual bool handleClear(const ShellCommand& cmd);
         virtual bool handleExit(const ShellCommand& cmd);
         virtual bool handleHelp(const ShellCommand& cmd);
+        virtual bool handleSave(const ShellCommand& cmd);
+        virtual bool handleLoad(const ShellCommand& cmd);
         virtual bool handleConnect(const ShellCommand& cmd) = 0;
         virtual bool handleAddUserRemote(const ShellCommand& cmd);
         virtual bool handleDropUserRemote(const ShellCommand& cmd);
@@ -55,10 +57,10 @@ std::wstring wformat_pretty_table(const vConTable& table);
 
         vSqlShellEngine(std::unique_ptr<dbConnection> c) : con(std::move(c)){
             if (con->openDatabase()) {
-                LOG_SUCCESS(L"DBF database a fost deschisa cu succes.");
+                LOG_SUCCESS(L"DBF database opened successfully.");
             }
             else {
-                LOG_FATAL(L"Eroare la deschiderea DBF!!!.");
+                LOG_FATAL(L"Error opening DBF database.");
             }
 
             registerDefaultHandlers();

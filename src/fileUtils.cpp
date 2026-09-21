@@ -43,19 +43,19 @@
             if (!fs::exists(path)) {
                 if (fs::create_directory(path)) {
                     //std::cout << "Directorul \"" << path << "\" a fost creat cu succes.\n";
-                    ConsoleManager::getInstance().log(L"[LOG] create_dir_if_missing: Directorul \"" + str_to_wstr(path) + L"\" a fost creat cu succes.");
+                    ConsoleManager::getInstance().log(L"[LOG] create_dir_if_missing: Directory \"" + str_to_wstr(path) + L"\" created successfully.");
                 }
                 else {
-                    std::cerr << "Eroare la crearea directorului \"" << path << "\".\n";
+                    std::cerr << "Error creating directory \"" << path << "\".\n";
                 }
             }
             else {
                 //std::cout << "Directorul \"" << path << "\" exista deja.\n";
-                ConsoleManager::getInstance().log(L"[LOG] create_dir_if_missing: Directorul \"" + str_to_wstr(path) + L"\" exista deja.");
+                ConsoleManager::getInstance().log(L"[LOG] create_dir_if_missing: Directory \"" + str_to_wstr(path) + L"\" already exists.");
             }
         }
         catch (const fs::filesystem_error& e) {
-            std::cerr << "Exceptie: " << e.what() << "\n";
+            std::cerr << "Exception: " << e.what() << "\n";
         }
     }
 
@@ -88,7 +88,7 @@
             return true;  // Copiere reușită
         }
         catch (const std::exception& e) {
-            std::cerr << "Eroare la copiere: " << e.what() << std::endl;
+            std::cerr << "Error copying file: " << e.what() << std::endl;
             return false;  // Copiere eșuată
         }
     }
@@ -116,7 +116,7 @@
         std::ifstream file(filename);
 
         if (!file) {
-            std::cerr << "Eroare la deschiderea fișierului: " << filename << std::endl;
+            std::cerr << "Error opening file: " << filename << std::endl;
             return lines;
         }
 
@@ -127,9 +127,9 @@
           //  std::wcout << utf8ToWstring(line) << std::endl;
         }
 
-        std::wcout << L"Am citit: " << lines.size() << std::endl;
+        std::wcout << L"Read " << lines.size() << L" lines." << std::endl;
         file.close();
-        std::wcout << L"Am inchis fisierul cu: " << lines.size() << std::endl;
+        std::wcout << L"Closed file with " << lines.size() << L" lines." << std::endl;
 
         return lines;
     }
@@ -139,7 +139,7 @@
         std::ifstream file(filename);
 
         if (!file) {
-            std::cerr << "Eroare la deschiderea fisierului: " << filename << std::endl;
+            std::cerr << "Error opening file: " << filename << std::endl;
             return lines;
         }
 
@@ -154,9 +154,9 @@
             lines.push_back(wline);
         }
 
-        std::wcout << L"Am citit: " << lines.size() << L" linii din fisier." << std::endl;
+        std::wcout << L"Read " << lines.size() << L" lines from the file." << std::endl;
         file.close();
-        std::wcout << L"AM INCHIS FISIERUL" << std::endl;
+        std::wcout << L"FILE CLOSED" << std::endl;
         return lines;
     }
 
@@ -175,7 +175,7 @@
             }
         }
         catch (const fs::filesystem_error& e) {
-            std::cerr << "Eroare la accesarea directorului: " << e.what() << '\n';
+            std::cerr << "Error accessing directory: " << e.what() << '\n';
         }
 
 
@@ -277,7 +277,7 @@
             }
         }
         catch (const fs::filesystem_error& e) {
-            std::wcerr << L"Eroare la accesarea directorului: " << e.what() << std::endl;
+            std::wcerr << L"Error accessing directory: " << e.what() << std::endl;
         }
 
         return matchingFiles;
@@ -307,7 +307,7 @@
             }
         }
         catch (const std::exception& e) {
-            std::wcerr << L"Eroare: " << e.what() << std::endl;
+            std::wcerr << L"Error: " << e.what() << std::endl;
             return false;
         }
 
@@ -316,7 +316,7 @@
 
     bool renameFile(const std::string& oldName, const std::string& newName) {
         if (std::rename(oldName.c_str(), newName.c_str()) != 0) {
-            std::cerr << "Eroare la redenumire: " << oldName << " → " << newName << std::endl;
+            std::cerr << "Error renaming file: " << oldName << " -> " << newName << std::endl;
             return false;
         }
         return true;
@@ -325,7 +325,7 @@
     bool wrenameFile(const std::wstring& oldName, const std::wstring& newName) {
 #ifdef _WIN32
         if (_wrename(oldName.c_str(), newName.c_str()) != 0) {
-            std::wcerr << L"Eroare la redenumirea fișierului: " << oldName << L" → " << newName << std::endl;
+            std::wcerr << L"Error renaming file: " << oldName << L" -> " << newName << std::endl;
             return false;
         }
 #else
@@ -333,7 +333,7 @@
             fs::rename(fs::path(oldName), fs::path(newName));
         }
         catch (const fs::filesystem_error&) {
-            std::wcerr << L"Eroare la redenumirea fișierului: " << oldName << L" → " << newName << std::endl;
+            std::wcerr << L"Error renaming file: " << oldName << L" -> " << newName << std::endl;
             return false;
         }
 #endif
@@ -348,7 +348,7 @@
             return true;  // Copiere reușită
         }
         catch (const fs::filesystem_error& e) {
-            std::wcerr << L"Eroare la copiere: " << e.what() << std::endl;
+            std::wcerr << L"Error copying file: " << e.what() << std::endl;
             return false;  // Copiere eșuată
         }
     }
@@ -366,7 +366,7 @@
             }
         }
         catch (const fs::filesystem_error& e) {
-            std::cerr << "Eroare la accesarea directorului: " << e.what() << std::endl;
+            std::cerr << "Error accessing directory: " << e.what() << std::endl;
         }
 
         return count;

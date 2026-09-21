@@ -233,7 +233,7 @@ vConResult vSqlEngine::executeInsert(const SqlQueryParser& parser) {
         const Query& q = parser.getQuery();
         //const Query& q = getCurrentQuery();
         if (m_sourceTables.empty())
-            throw std::runtime_error("Tabelul tinta nu a putut fi incarcat.");
+            throw std::runtime_error("The target table could not be loaded.");
 
         // Tabelul în care inserăm este întotdeauna primul (fromTable)
         const vConTable& target = m_sourceTables[0];
@@ -385,7 +385,7 @@ vConResult vSqlEngine::executeSelect(const SqlQueryParser& parser) {
                 vConResult subRes = subEngine.executeSubquery();
 
                 if (!subRes.success) {
-                    throw std::runtime_error("Eroare in subquery-ul din FROM: " + wstr_to_str(subRes.message));
+                    throw std::runtime_error("Error in the FROM subquery: " + wstr_to_str(subRes.message));
                 }
 
                 // Tabelul rezultat devine baza noastră de lucru
@@ -1258,7 +1258,7 @@ std::wstring vSqlEngine::evaluateASTNode(std::shared_ptr<ExprASTNode> node, cons
     // --- 5. SUBQUERY MIRACOL: Executăm un sub-select la runtime! ---
     case ExprNodeType::SUBQUERY: {
         if (!node->subQuery) {
-            LOG_ERROR(L"Eroare: node->subQuery este null!");
+            LOG_ERROR(L"Error: node->subQuery is null!");
             return L"0";
         }
 
@@ -1281,7 +1281,7 @@ std::wstring vSqlEngine::evaluateASTNode(std::shared_ptr<ExprASTNode> node, cons
             }
         }
         else {
-            LOG_ERROR(L"Eroare executie subquery: " + subRes.message);
+            LOG_ERROR(L"Subquery execution error: " + subRes.message);
         }
 
         // --- 3. SALVĂM ÎN CACHE PENTRU URMĂTOARELE RÂNDURI ---
@@ -1318,7 +1318,7 @@ vConResult vSqlEngine::executeSubquery() {
             // Construcția universului / join-uri pentru subquery
             vConTable* targetTable = findTableInUniverse(q.fromTable.getEffectiveName());
             if (!targetTable) {
-                throw std::runtime_error("Tabelul pentru subquery nu a fost gasit: " + wstr_to_str(q.fromTable.getEffectiveName()));
+                throw std::runtime_error("Subquery table was not found: " + wstr_to_str(q.fromTable.getEffectiveName()));
             }
             workTable = *targetTable; // <--- CORECT: Acum targetează 'persoane', nu 'departamente'
 
