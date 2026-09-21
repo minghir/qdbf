@@ -54,4 +54,8 @@ git clone [https://github.com/minghir/qdbf.git](https://github.com/minghir/qdbf.
 ```
 * Open the project in your IDE (e.g., Visual Studio) or build using your Make/CMake setup.
 * Build the Server and Client executables.
-
+  
+# Running the Application
+* Place your .dbf files in the defined working directory (e.g., .\dbfs).
+* Start the QDBF Server.
+* Start the QDBF Client, login with your credentials (e.g., admin), and start typing SQL queries!
